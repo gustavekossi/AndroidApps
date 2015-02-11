@@ -1,23 +1,19 @@
 package com.parkinglami.gustave.myapplication;
-
-
 import android.graphics.Color;
+import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
-
-
+import android.location.Location;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.parkinglami.gustave.myapplication.utils.DirectionsJSONParser;
-
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,73 +24,45 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends FragmentActivity implements com.parkinglami.gustave.myapplication.LocationProvider.LocationCallback {
 
-
-    private GoogleMap map; // Might be null if Google Play services APK is not available.
-    ArrayList<LatLng> markerPoints;
+    public static final String TAG = MapsActivity.class.getSimpleName();
+    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private LocationProvider mLocationProvider;
+    //ArrayList<LatLng> markerPoints; //??
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-/************************************************************************************/
-        // Initializing array List
-        markerPoints = new ArrayList<LatLng>();
-        // Initializing array List
-        markerPoints = new ArrayList<LatLng>();
 
+/*        // Initializing array List
+        markerPoints = new ArrayList<LatLng>();
         // Getting reference to SupportMapFragment of the activity_main
         SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
-
         // Getting Map for the SupportMapFragment
-        map = fm.getMap();
+        mMap = fm.getMap();
+        // on récupère la position GPS du périphérique
+        mMap.setMyLocationEnabled(true);????????????????*/
 
-        map.setMyLocationEnabled(true);
-
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-
-            @Override
-            public void onMapClick(LatLng point) {
-
-                if(markerPoints.size()>1){
-                    markerPoints.clear();
-                    map.clear();
-                }
-
-                markerPoints.add(point);
-
-                MarkerOptions options = new MarkerOptions();
-
-                options.position(point);
-
-                if(markerPoints.size()==1){
-                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-                }else if(markerPoints.size()==2){
-                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                }
-
-                map.addMarker(options);
-
-                if(markerPoints.size() >= 2){
-                    LatLng origin = markerPoints.get(0);
-                    LatLng dest = markerPoints.get(1);
-
-                    String url = getDirectionsUrl(origin, dest);
-
-                    DownloadTask downloadTask = new DownloadTask();
-
-                    downloadTask.execute(url);
-                }
-            }
-        });
-/**********************************************************************************/
         setUpMapIfNeeded();
+        mLocationProvider = new LocationProvider(this, this);
+        //setUpMap(); //??
+
+    }//end onCreate()
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setUpMapIfNeeded();
+        mLocationProvider.connect();
+
     }
-
-
-/***********************************************************************************/
-private String getDirectionsUrl(LatLng origin,LatLng dest){
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mLocationProvider.disconnect();
+    }
+/*private String getDirectionsUrl(LatLng origin,LatLng dest){
 
     // Origin of route
     String str_origin = "origin="+origin.latitude+","+origin.longitude;
@@ -114,9 +82,9 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
     String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
 
     return url;
-}
+}?????????????????????*/
 
-    private String downloadUrl(String strUrl) throws IOException {
+  /*  private String downloadUrl(String strUrl) throws IOException {
         String data = "";
         InputStream iStream = null;
         HttpURLConnection urlConnection = null;
@@ -151,10 +119,14 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
             urlConnection.disconnect();
         }
         return data;
-    }
+    }?????????????????????????*/
+
+
+
+
 
     // Fetches data from url passed
-    private class DownloadTask extends AsyncTask<String, Void, String> {
+  /*  private class DownloadTask extends AsyncTask<String, Void, String> {
 
         // Downloading data in non-ui thread
         @Override
@@ -183,10 +155,10 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
             // Invokes the thread for parsing the JSON data
             parserTask.execute(result);
         }
-    }
+    }???????????????????????????????*/
 
 
-    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>>>{
+   /* private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>>>{
 
         @Override
         protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
@@ -233,20 +205,18 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
 
                 // Adding all the points in the route to LineOptions
                 lineOptions.addAll(points);
-                lineOptions.width(2);
-                lineOptions.color(Color.RED);
+                lineOptions.width(4);
+                lineOptions.color(Color.BLUE);
             }
 
             // Drawing polyline in the Google Map for the i-th route
-            map.addPolyline(lineOptions);
+            mMap.addPolyline(lineOptions);
         }
-    }
-/**********************************************************************************/
-    @Override
-    protected void onResume() {
-        super.onResume();
-        setUpMapIfNeeded();
-    }
+    }???????????????????????????*/
+
+
+
+
 
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -265,12 +235,12 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
      */
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
-        if (map == null) {
+        if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             // Check if we were successful in obtaining the map.
-            if (map != null) {
+            if (mMap != null) {
                 setUpMap();
             }
         }
@@ -283,8 +253,44 @@ private String getDirectionsUrl(LatLng origin,LatLng dest){
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
-        map.addMarker(new MarkerOptions().position(new LatLng(50.328492,3.514597999999978)).title("Valenciennes"));
+        // latitude and longitude
+    /*    double latitude = 50.3;
+        double latitude1 = 50.63030000433211;
+        double longitude = 3.5;
+        double longitude1 = 2.970428466796875;*/
+
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker")); //////////////////////////////
+
+        //positions de départ et d'arrivée fixées en dur
+       // mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("Arrivée"));
+       // mMap.addMarker(new MarkerOptions().position(new LatLng(latitude1,longitude1)).title("Départ"));
+
+
+
+        //tracer une route entre le départ et l'arrivée
+      //  LatLng depart = new LatLng(latitude,longitude);
+        //LatLng arrivee = new LatLng(latitude1, longitude1);
+       // String url = getDirectionsUrl(depart, arrivee);
+
+        //DownloadTask downloadTask = new DownloadTask();
+
+       // downloadTask.execute(url);
+    }// end setUpMap
+
+    public void handleNewLocation(Location location) {
+        Log.d(TAG, location.toString());
+
+        double currentLatitude = location.getLatitude();
+        double currentLongitude = location.getLongitude();
+        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
+        MarkerOptions options = new MarkerOptions()
+                .position(latLng)
+                .title("I am here!");
+        mMap.addMarker(options);
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
     }
 
-}
+
+} // end MapsActivity
